@@ -4,6 +4,8 @@ CWRUbotix's solution to the MATE ROV 2024 [Ocean Exploration Video Challenge](ht
 
 Training footage was provided by MATE [here](https://drive.google.com/file/d/1Wb9GjKUs6-hu4zLdTqaahYo66ZOhCXhr/view).
 
+FathomNet has HuggingFace models [here](https://huggingface.co/FathomNet).
+
 
 ## Exploding the Video
 ```bash
