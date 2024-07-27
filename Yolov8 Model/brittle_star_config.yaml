@@ -1,0 +1,5 @@
+path: C:\Users\samue\OneDrive\桌面\Coding\Robotics\ML Training\yolo_dataset
+train: images/train
+val: images/val
+nc: 1
+names: ['brittle_star']
