@@ -1,12 +1,9 @@
 
-from datetime import datetime
 from pathlib import Path
-import json
-import os
 import requests
 from PIL import Image
 from io import BytesIO
-from fathomnet.api import images, boundingboxes
+from fathomnet.api import images
 
 
 def download_and_process_images(images_folder: str | Path, labels_folder: str | Path) -> None:

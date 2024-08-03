@@ -1,11 +1,9 @@
 import json
-import os
 import requests
 from pathlib import Path
 from PIL import Image
 from io import BytesIO
-from sklearn.model_selection import train_test_split
-from shutil import copy, rmtree
+
 
 def download_and_process_images(json_folder: str | Path, images_folder: str | Path, labels_folder: str | Path) -> None:
     json_folder = Path(json_folder)
