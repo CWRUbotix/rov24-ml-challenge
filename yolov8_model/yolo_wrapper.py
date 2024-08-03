@@ -1,14 +1,10 @@
-import warnings
 from shutil import copy, rmtree
 from pathlib import Path
 import numpy as np
-import cv2
 from ultralytics import YOLO
 from sklearn.model_selection import train_test_split
-import pandas as pd
 import torch
-import matplotlib.pyplot as plt
-import pandas
+
 
 class YoloWrapper:
     def __init__(self, model_weights: str) -> None:
