@@ -22,8 +22,8 @@ FathomNet has HuggingFace models [here](https://huggingface.co/FathomNet).
    ```
 
 ### Train
- - Go to `main.py` and double check that you're in training mode
- - Double check your images and labels in the respective folders
+ - Go to `main.py` and double-check that you're in training mode
+ - Double-check your images and labels in the respective folders
  - Remove files from previous runs:
   - `runs` (folder)
   - `yolo_dataset` (folder)

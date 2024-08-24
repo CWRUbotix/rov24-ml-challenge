@@ -1,0 +1,5 @@
+path: C:\Users\Noah\PycharmProjects\rov24-ml-challenge\yolov8_model\yolo_dataset
+train: images/train
+val: images/val
+nc: 1
+names: ['brittle_star']

@@ -26,8 +26,9 @@ class YoloWrapper:
         # initialize YOLO model
         self.model = YOLO(model_weights)
 
+    @staticmethod
     def create_dataset(images_path: str | Path, labels_path: str | Path = None, result_path: str | Path = None,
-        train_size: float = 0.9) -> None:
+                       train_size: float = 0.9) -> None:
         """
         Create A YOLO dataset from a folder of images and a folder of labels. The function
         assumes all the images have a labels with the same name. The output structure is
@@ -89,9 +90,10 @@ class YoloWrapper:
                 copy(image, result_path_image_validation / image.name)
                 copy(label, result_path_label_validation / label.name)
 
+    @staticmethod
     def create_config_file(parent_data_path: str | Path, class_names: list[str], path_to_save: str = None) -> None:
-            
-            """
+
+        """
             Create YOLOv8 configuration yaml file. The configuration file contains:
             path -  absolute path to the folder contains the images and labels folders with the data
             train - relative path to 'path' of the train images folder (images/train)
@@ -116,40 +118,40 @@ class YoloWrapper:
             Returns:
 
             """
-            parent_data_path = Path(parent_data_path)
-            if not parent_data_path.exists():
-                raise FileNotFoundError(f'Folder {parent_data_path} is not found')
-            if not (parent_data_path / 'images' / 'train').exists():
-                raise FileNotFoundError(f'There is not folder {parent_data_path / "images" / "train"}')
-            if not (parent_data_path / 'labels' / 'train').exists():
-                raise FileNotFoundError(f'There is not folder {parent_data_path / "labels" / "train"}')
+        parent_data_path = Path(parent_data_path)
+        if not parent_data_path.exists():
+            raise FileNotFoundError(f'Folder {parent_data_path} is not found')
+        if not (parent_data_path / 'images' / 'train').exists():
+            raise FileNotFoundError(f'There is not folder {parent_data_path / "images" / "train"}')
+        if not (parent_data_path / 'labels' / 'train').exists():
+            raise FileNotFoundError(f'There is not folder {parent_data_path / "labels" / "train"}')
 
-            config = {
-                'path': str(parent_data_path.absolute()),
-                'train': 'images/train',
-                'val': 'images/val',
-                'nc': len(class_names),
-                'names': class_names
-            }
+        config = {
+            'path': str(parent_data_path.absolute()),
+            'train': 'images/train',
+            'val': 'images/val',
+            'nc': len(class_names),
+            'names': class_names
+        }
 
-            if not (parent_data_path / 'images' / 'val').exists():
-                config.pop('val')
+        if not (parent_data_path / 'images' / 'val').exists():
+            config.pop('val')
 
-            if path_to_save is None:
-                path_to_save = 'config.yaml'
-            path_to_save = Path(path_to_save)
+        if path_to_save is None:
+            path_to_save = 'config.yaml'
+        path_to_save = Path(path_to_save)
 
-            if not path_to_save.suffix:  # is a folder
-                path_to_save.mkdir(parents=True, exist_ok=True)
-                path_to_save = path_to_save / 'config.yaml'
+        if not path_to_save.suffix:  # is a folder
+            path_to_save.mkdir(parents=True, exist_ok=True)
+            path_to_save = path_to_save / 'config.yaml'
 
-            if path_to_save.suffix != '.yaml':
-                raise ValueError(f'The path to save the configuration file should be a folder, a yaml file or None.'
-                                f'Got a {path_to_save.suffix} file instead')
+        if path_to_save.suffix != '.yaml':
+            raise ValueError(f'The path to save the configuration file should be a folder, a yaml file or None.'
+                             f'Got a {path_to_save.suffix} file instead')
 
-            with open(path_to_save, 'w', encoding = 'utf8') as file:
-                for key, value in config.items():
-                    file.write(f'{key}: {value}\n')
+        with open(path_to_save, 'w', encoding='utf8') as file:
+            for key, value in config.items():
+                file.write(f'{key}: {value}\n')
 
     def train(self, config: str, epochs: int = 100, name: str = None) -> None:
         """
@@ -175,8 +177,8 @@ class YoloWrapper:
             raise ValueError('Config file should be a yaml file')
         self.model.train(data=config, epochs=epochs, name=name, freeze=10)
 
-
-    def predict(self, image: str | Path | np.ndarray | list[str] | list[Path] | list[np.ndarray], threshold: float = 0.25,
+    def predict(self, image: str | Path | np.ndarray | list[str] | list[Path] | list[np.ndarray],
+                threshold: float = 0.25,
                 ) -> list[np.ndarray]:
         """
         Predict bounding box for images.
@@ -191,15 +193,16 @@ class YoloWrapper:
             (list[np.ndarray]): a list with numpy ndarrays for each detection
         """
         yolo_results = self.model(image, conf=threshold)
-        bounding_boxes = [torch.concatenate([x.boxes.xyxy[:, :2], x.boxes.xyxy[:, 2:] - x.boxes.xyxy[:, :2]], dim=1).cpu().numpy()
-                          for x in yolo_results]
+        bounding_boxes = [
+            torch.concatenate([x.boxes.xyxy[:, :2], x.boxes.xyxy[:, 2:] - x.boxes.xyxy[:, :2]], dim=1).cpu().numpy()
+            for x in yolo_results]
         return bounding_boxes
 
-    def predict_and_show(self, image: str | np.ndarray, threshold: float = 0.25) -> None:
+    def predict_frame(self, image: Path | np.ndarray, threshold: float = 0.25):
         """
-        Predict bounding box for a single image and show the bounding box with its confidence.
+        Predict bounding box for a single image
         Args:
-            image (str | np.ndarray): a path to an image or a BGR np.ndarray image to predict
+            image (Path | np.ndarray): a path to an image or a BGR np.ndarray image to predict
                 bounding box for
             threshold (float): a number between 0 and 1 for the confidence a bounding box should have to
                 consider as a detection. Default is 0.25.
@@ -209,5 +212,4 @@ class YoloWrapper:
         results = self.model(image)
         for result in results:
             return result.boxes.xywh
-            result.show()  # display to screen
-            
+            # result.show()  # display to screen
