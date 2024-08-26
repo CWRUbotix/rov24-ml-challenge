@@ -80,41 +80,42 @@ def label_video(input_video_path: str, output_video_path: str) -> None:
     clip.write_videofile(output_video_path, codec="libx264", fps=30)
 
 
-def predict_image():
-    dataset_path = Path('yolo_dataset')  # where the YOLO dataset will be
+def predict_image(input_dir: str, output_dir: str) -> None:
+    # dataset_path = Path('yolo_dataset')  # where the YOLO dataset will be
+    # data_to_predict_path = dataset_path / 'images' / 'val'
+
+    data_to_predict_path = Path(input_dir)
+    output_dir_path = Path(output_dir)
 
     # Switch the model here, make sure to double-check the model
     model = YoloWrapper('mission_specific.pt')
 
     # make predictions on the validation set
-    data_to_predict_path = dataset_path / 'images' / 'val'
-
     val_image_list = list(data_to_predict_path.glob('*.png'))
 
-    data = model.predict_frame(val_image_list[0])
+    for i, image_path in enumerate(val_image_list):
+        data = model.predict_frame(image_path)
 
-    image = Image.open(val_image_list[0])
-    image_width, image_height = image.size
+        image = Image.open(image_path)
+        image_width, image_height = image.size
 
-    formatted_data = []
-    
-    for tensor in data:
-        tensor_data_normalized = tensor.clone()  # Create a copy of the tensor
-        tensor_data_normalized[0] = tensor[0] / image_width  # Normalize x
-        tensor_data_normalized[1] = tensor[1] / image_height  # Normalize y
-        tensor_data_normalized[2] = tensor[2] / image_width  # Normalize width
-        tensor_data_normalized[3] = tensor[3] / image_height  # Normalize height
+        formatted_data = []
         
-        # Format the normalized values as "0 x y w h" strings
-        formatted_string = "0 {:.4f} {:.4f} {:.4f} {:.4f}".format(*tensor_data_normalized)
-        formatted_data.append(formatted_string)
+        for tensor in data:
+            tensor_data_normalized = tensor.clone()  # Create a copy of the tensor
+            tensor_data_normalized[0] = tensor[0] / image_width  # Normalize x
+            tensor_data_normalized[1] = tensor[1] / image_height  # Normalize y
+            tensor_data_normalized[2] = tensor[2] / image_width  # Normalize width
+            tensor_data_normalized[3] = tensor[3] / image_height  # Normalize height
 
-    # Write the formatted values to a text file
-    with open("image1.txt", "w") as f:
-        for line in formatted_data:
-            f.write(line + "\n")
+            # Format the normalized values as "0 x y w h" strings
+            formatted_string = "0 {:.4f} {:.4f} {:.4f} {:.4f}".format(*tensor_data_normalized)
+            formatted_data.append(formatted_string)
 
-
+        # Write the formatted values to a text file
+        with open(output_dir_path / f'{image_path.name}.txt', 'w') as f:
+            for line in formatted_data:
+                f.write(line + "\n")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='predict.py',
