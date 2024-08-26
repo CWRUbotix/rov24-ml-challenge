@@ -1,4 +1,6 @@
 import argparse
+import os
+
 import torch
 from pathlib import Path
 from yolo_wrapper import YoloWrapper
@@ -6,9 +8,6 @@ import cv2
 from PIL import Image
 from moviepy.editor import ImageSequenceClip
 
-
-# Enable this if you want output video
-# __________________________________________________________________
 
 def draw_bounding_boxes(frame, boxes_tensor):
     """
@@ -31,30 +30,21 @@ def draw_bounding_boxes(frame, boxes_tensor):
     return frame
 
 
-def label_video(input_video_path: str, output_video_path: str) -> None:
-    torch.set_num_threads(5)  # Adjust the number of threads according to your available resources
-    # Check if GPU is available and set the device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    # paths to the data
-    dataset_path = Path('yolo_dataset')  # where the YOLO dataset will be
-    large_field_images_path = Path('image')  # where the original images
-    labels_path = Path('labels')  # where the labels are
+def label_video(args: argparse.Namespace) -> None:
+    input_path = args.input_path
+    output_path = args.output_path
 
-    # create the dataset in the format of YOLO
-    # YoloWrapper.create_dataset(large_field_images_path, labels_path, dataset_path)
-    # # create YOLO configuration file
-    # config_path = 'brittle_star_config.yaml'
-    # YoloWrapper.create_config_file(dataset_path, ['brittle_star'], config_path)
+    torch.set_num_threads(5)  # Adjust the number of threads according to your available resources
 
     # create pretrained YOLO model and train it using transfer learning
-    model = YoloWrapper('mission_specific.pt')
-    # model.train(config_path, epochs=200, name='blood_cell')
+    model = YoloWrapper('mission_specific_model.pt')
 
-    cap = cv2.VideoCapture(input_video_path)
+    if os.path.isfile(input_path):
+        cap = cv2.VideoCapture(input_path)
+    else:
+        raise FileNotFoundError(f'Input video file not found: {input_path}')
 
     # Get video properties
-    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS)
 
     processed_frames = []
@@ -65,7 +55,7 @@ def label_video(input_video_path: str, output_video_path: str) -> None:
         if not ret:
             break
 
-        data = model.predict_frame(frame)
+        data = model.predict_frame(frame, threshold=args.confidence)
 
         frame = draw_bounding_boxes(frame, data)
         frame_idx += 1
@@ -76,24 +66,24 @@ def label_video(input_video_path: str, output_video_path: str) -> None:
 
     # Convert processed frames to a video
     clip = ImageSequenceClip([cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) for frame in processed_frames], fps=fps)
-    clip.write_videofile(output_video_path, codec="libx264", fps=30)
+    clip.write_videofile(output_path, codec="libx264", fps=30)
 
 
-def predict_image(input_dir: str, output_dir: str) -> None:
-    # dataset_path = Path('yolo_dataset')  # where the YOLO dataset will be
-    # data_to_predict_path = dataset_path / 'images' / 'val'
+def predict_image(args: argparse.Namespace) -> None:
+    input_dir = args.input_dir
+    output_dir = args.output_dir
 
     data_to_predict_path = Path(input_dir)
     output_dir_path = Path(output_dir)
 
     # Switch the model here, make sure to double-check the model
-    model = YoloWrapper('mission_specific.pt')
+    model = YoloWrapper('mission_specific_model.pt')
 
     # make predictions on the validation set
     val_image_list = list(data_to_predict_path.glob('*.png'))
 
     for i, image_path in enumerate(val_image_list):
-        data = model.predict_frame(image_path)
+        data = model.predict_frame(image_path, threshold=args.confidence)
 
         image = Image.open(image_path)
         image_width, image_height = image.size
@@ -120,13 +110,25 @@ def predict_image(input_dir: str, output_dir: str) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='predict.py',
                                      description='Uses the model to make predictions on an image or video')
-    subparsers = parser.add_subparsers(title='mode')
+    subparsers = parser.add_subparsers(title='mode', required=True)
 
     predict_video_parser = subparsers.add_parser('video', help='Make predictions on each frame of a video')
-    predict_video_parser.add_argument('input_video', help='Path to input video file')
-    predict_video_parser.add_argument('output_video', help='Where to output the annotated video')
+    predict_video_parser.add_argument("-i", '--input-path', required=True,
+                                      help='Path to input video file')
+    predict_video_parser.add_argument("-o", '--output-path', required=True,
+                                      help='Where to output the annotated video')
+    predict_video_parser.add_argument("-c", '--confidence', default=0.5, type=float,
+                                      help='The confidence threshold for a prediction to be annotated')
+    predict_video_parser.set_defaults(func=label_video)
 
-    predict_video_parser = subparsers.add_parser('image', help='Make predictions on a folder of images')
+    predict_image_parser = subparsers.add_parser('image', help='Make predictions on a folder of png images')
+    predict_image_parser.add_argument("-i", '--input-dir', required=True,
+                                      help='Path to directory containing images to be processed')
+    predict_image_parser.add_argument("-o", '--output-dir', required=True,
+                                      help='Directory to output the annotations')
+    predict_image_parser.add_argument("-c", '--confidence', default=0.5, type=float,
+                                      help='The confidence threshold for a prediction to be annotated')
+    predict_image_parser.set_defaults(func=predict_image)
 
-    args = parser.parse_args()
-    print(args)
+    parsed_args = parser.parse_args()
+    parsed_args.func(parsed_args)
