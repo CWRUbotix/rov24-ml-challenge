@@ -2,7 +2,6 @@ import argparse
 import torch
 from pathlib import Path
 from yolo_wrapper import YoloWrapper
-import matplotlib.pyplot as plt
 import cv2
 from PIL import Image
 from moviepy.editor import ImageSequenceClip
@@ -100,7 +99,7 @@ def predict_image(input_dir: str, output_dir: str) -> None:
         image_width, image_height = image.size
 
         formatted_data = []
-        
+
         for tensor in data:
             tensor_data_normalized = tensor.clone()  # Create a copy of the tensor
             tensor_data_normalized[0] = tensor[0] / image_width  # Normalize x
@@ -116,6 +115,7 @@ def predict_image(input_dir: str, output_dir: str) -> None:
         with open(output_dir_path / f'{image_path.name}.txt', 'w') as f:
             for line in formatted_data:
                 f.write(line + "\n")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='predict.py',

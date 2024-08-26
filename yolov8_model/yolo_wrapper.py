@@ -1,5 +1,7 @@
 from shutil import copy, rmtree
 from pathlib import Path
+from typing import Any
+
 import numpy as np
 from ultralytics import YOLO
 from sklearn.model_selection import train_test_split
@@ -198,7 +200,7 @@ class YoloWrapper:
             for x in yolo_results]
         return bounding_boxes
 
-    def predict_frame(self, image: str | np.ndarray, threshold: float = 0.5) -> None:
+    def predict_frame(self, image: Path | np.ndarray, threshold: float = 0.5) -> list[Any]:
         """
         Predict bounding box for a single image and show the bounding box with its confidence.
         Args:
@@ -214,9 +216,9 @@ class YoloWrapper:
         for result in results:
             boxes = result.boxes.xyxy
             confidences = result.boxes.conf  # Assuming `conf` gives you the confidence scores for each box
-            
+
             for i, box in enumerate(boxes):
                 if confidences[i] > threshold:
                     filtered_boxes.append(box)
-                    
+
         return filtered_boxes
