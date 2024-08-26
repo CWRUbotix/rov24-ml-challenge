@@ -198,18 +198,25 @@ class YoloWrapper:
             for x in yolo_results]
         return bounding_boxes
 
-    def predict_frame(self, image: Path | np.ndarray, threshold: float = 0.25):
+    def predict_frame(self, image: str | np.ndarray, threshold: float = 0.5) -> None:
         """
-        Predict bounding box for a single image
+        Predict bounding box for a single image and show the bounding box with its confidence.
         Args:
-            image (Path | np.ndarray): a path to an image or a BGR np.ndarray image to predict
+            image (str | np.ndarray): a path to an image or a BGR np.ndarray image to predict
                 bounding box for
             threshold (float): a number between 0 and 1 for the confidence a bounding box should have to
                 consider as a detection. Default is 0.25.
         Returns:
 
         """
+        filtered_boxes = []
         results = self.model(image)
         for result in results:
-            return result.boxes.xywh
-            # result.show()  # display to screen
+            boxes = result.boxes.xyxy
+            confidences = result.boxes.conf  # Assuming `conf` gives you the confidence scores for each box
+            
+            for i, box in enumerate(boxes):
+                if confidences[i] > threshold:
+                    filtered_boxes.append(box)
+                    
+        return filtered_boxes

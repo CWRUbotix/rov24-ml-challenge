@@ -23,7 +23,7 @@ def draw_bounding_boxes(frame, boxes_tensor):
     numpy.ndarray: The frame with bounding boxes drawn on it.
     """
     # Ensure the tensor is in CPU and convert it to a numpy array
-    boxes = boxes_tensor.cpu().numpy()
+    boxes = boxes_tensor
 
     for box in boxes:
         x1, y1, x2, y2 = map(int, box)  # Convert float coordinates to integers
@@ -66,9 +66,9 @@ def label_video(input_video_path: str, output_video_path: str) -> None:
         if not ret:
             break
 
-        tensor_data = model.predict_frame(frame)
+        data = model.predict_frame(frame)
 
-        frame = draw_bounding_boxes(frame, tensor_data)
+        frame = draw_bounding_boxes(frame, data)
         frame_idx += 1
         # Add the processed frame to the list
         processed_frames.append(frame)
@@ -91,25 +91,29 @@ def predict_image():
 
     val_image_list = list(data_to_predict_path.glob('*.png'))
 
-    tensor_data = model.predict_frame(val_image_list[0])
+    data = model.predict_frame(val_image_list[0])
 
     image = Image.open(val_image_list[0])
     image_width, image_height = image.size
 
-    # Normalize the tensor values based on the image dimensions
-    tensor_data_normalized = tensor_data.clone()
-    tensor_data_normalized[:, 0] = tensor_data[:, 0] / image_width  # Normalize x
-    tensor_data_normalized[:, 1] = tensor_data[:, 1] / image_height  # Normalize y
-    tensor_data_normalized[:, 2] = tensor_data[:, 2] / image_width  # Normalize width
-    tensor_data_normalized[:, 3] = tensor_data[:, 3] / image_height  # Normalize height
-
-    # Format the normalized values as "x,y,w,h" strings
-    formatted_data = ["0 {:.4f} {:.4f} {:.4f} {:.4f}".format(*row) for row in tensor_data_normalized]
+    formatted_data = []
+    
+    for tensor in data:
+        tensor_data_normalized = tensor.clone()  # Create a copy of the tensor
+        tensor_data_normalized[0] = tensor[0] / image_width  # Normalize x
+        tensor_data_normalized[1] = tensor[1] / image_height  # Normalize y
+        tensor_data_normalized[2] = tensor[2] / image_width  # Normalize width
+        tensor_data_normalized[3] = tensor[3] / image_height  # Normalize height
+        
+        # Format the normalized values as "0 x y w h" strings
+        formatted_string = "0 {:.4f} {:.4f} {:.4f} {:.4f}".format(*tensor_data_normalized)
+        formatted_data.append(formatted_string)
 
     # Write the formatted values to a text file
     with open("image1.txt", "w") as f:
         for line in formatted_data:
             f.write(line + "\n")
+
 
 
 if __name__ == "__main__":
