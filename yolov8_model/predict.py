@@ -48,7 +48,7 @@ def label_video(input_video_path: str, output_video_path: str) -> None:
     # YoloWrapper.create_config_file(dataset_path, ['brittle_star'], config_path)
 
     # create pretrained YOLO model and train it using transfer learning
-    model = YoloWrapper('best.pt')
+    model = YoloWrapper('mission_specific.pt')
     # model.train(config_path, epochs=200, name='blood_cell')
 
     cap = cv2.VideoCapture(input_video_path)
@@ -83,8 +83,8 @@ def label_video(input_video_path: str, output_video_path: str) -> None:
 def predict_image():
     dataset_path = Path('yolo_dataset')  # where the YOLO dataset will be
 
-    # Switch the model here, make sure to double-check the model (Inside the runs folder).
-    model = YoloWrapper('best.pt')
+    # Switch the model here, make sure to double-check the model
+    model = YoloWrapper('mission_specific.pt')
 
     # make predictions on the validation set
     data_to_predict_path = dataset_path / 'images' / 'val'
